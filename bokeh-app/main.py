@@ -25,7 +25,7 @@ def update_figure(fileName):
     # read excelfile
     data = pd.read_csv(file, delimiter=';')
     # draw figure
-    p = figure(plot_height=800, plot_width=1400, y_axis_type='datetime', background_fill_color='#fafafa')
+    p = figure(plot_height=800, plot_wdth=1400, y_axis_type='datetime', background_fill_color='#fafafa')
     for column_name in data.columns:
         for i in range(7):
             if str(i) in column_name:
