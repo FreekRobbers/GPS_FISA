@@ -1,7 +1,10 @@
 dependencies:
   - bokeh
   - pandas
-  - scipy
+  - statistics
+  - datetime
+  - base64
+  - io
   - pip
   - pip:
     - jupyter-server-proxy
