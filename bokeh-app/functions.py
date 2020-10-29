@@ -1,4 +1,3 @@
-import statistics
 import datetime
 
 # function converts speed to avg2kTime:
@@ -13,7 +12,7 @@ def speedToAvgTime(speed):
         avg2kTime.append(0)
     for i in range(len(speed)-1):
         try:
-            avg2kTime.append(datetime.timedelta(seconds=2000/statistics.mean(speed[0:i+1])))
+            avg2kTime.append(datetime.timedelta(seconds=2000/speed[0:i+1].mean()))
         except:
             avg2kTime.append(0)
     return avg2kTime
