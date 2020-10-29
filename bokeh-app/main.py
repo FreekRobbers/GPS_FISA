@@ -94,7 +94,7 @@ def update_figure(fileName):
     # read excelfile
     data = pd.read_csv(file, delimiter=';')
     # draw figure
-    p = figure(plot_height=800, plot_width=1400, y_axis_type='datetime', background_fill_color='#fafafa')
+    p = figure(plot_height=600, plot_width=1200, y_axis_type='datetime', background_fill_color='#fafafa')
     for column_name in data.columns:
         for i in range(7):
             if str(i) in column_name:
@@ -134,6 +134,6 @@ def update(attr, old, new):
 file_input = FileInput(accept='.csv', multiple=False, margin=[5,5,5,65])
 file_input.on_change('value', update)
 
-layout = column(file_input, figure(plot_height=800, plot_width=1400))
+layout = column(file_input, figure(plot_height=600, plot_width=1200))
 curdoc().add_root(layout)
 curdoc().title = "GPS FISA"
