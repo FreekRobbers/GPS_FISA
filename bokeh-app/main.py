@@ -6,7 +6,6 @@ Created on Sun Oct  25 13:35:13 2020
 """
 import pandas as pd
 
-import statistics
 import datetime
 import base64
 import io
