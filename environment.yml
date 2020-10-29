@@ -4,3 +4,6 @@ dependencies:
   - pip
   - pip:
     - jupyter-server-proxy
+    - datetime
+    - base64
+    - io
