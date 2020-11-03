@@ -100,7 +100,6 @@ def worldRecord(file):
 
     return WR
 
-
 def speedToAvgTime(speed):
     # function that converts speed to average 2k time:
     # speed: each sample represents real time speed (m/s)
@@ -115,6 +114,22 @@ def speedToAvgTime(speed):
     for i in range(len(speed)-1):
         try:
             avg2kTime.append(datetime.timedelta(seconds=2000/(speed[0:i+1]).mean()))
+        except:
+            avg2kTime.append(float('nan'))
+            print('Error at sample ' + str(i+1))
+    return avg2kTime
+
+def timeToAvgTime(time,distance):
+    # function that converts speed to average 2k time:
+    # speed: each sample represents real time speed (m/s)
+    # to
+    # avg2kTime: each sample represents average speed so far (2k time)
+    avg2kTime = []
+    for i in range(len(time)):
+        try:
+            t = datetime.datetime.strptime(time[i],"%M:%S.%f")
+            dt = datetime.timedelta(minutes=t.minute,seconds=t.second,milliseconds=t.microsecond/1000)
+            avg2kTime.append((dt/distance[i])*2000)
         except:
             avg2kTime.append(float('nan'))
             print('Error at sample ' + str(i+1))
@@ -136,6 +151,9 @@ def update_figure(fileName):
                     country = data[column_name][1]
                 elif 'Time' in column_name:
                     time2k = data[column_name].iloc[-1]
+                    time = data[column_name]
+                    t = datetime.datetime.strptime(time[0],"%M:%S.%f")
+                    avg2kTime2 = timeToAvgTime(time,data.Distance.values)
                 elif 'Speed' in column_name:
                     speed = data[column_name]
                     if pd.isna(speed).any():
@@ -144,7 +162,7 @@ def update_figure(fileName):
                     avg2kTime = speedToAvgTime(speed)
                     try:
                         # draw circles
-                        p.circle(x=data.Distance.values, y=avg2kTime, legend_label=(str(time2k)[0:7] + ' ' + country), color=Colorblind8[i])
+                        p.circle(x=data.Distance.values, y=avg2kTime2, legend_label=(str(time2k)[0:7] + ' ' + country), color=Colorblind8[i])
                     except:
                         print('Draw figure failed')
 
