@@ -11,7 +11,7 @@ import base64
 import io
 
 from bokeh.io import curdoc
-from bokeh.models import DatetimeTickFormatter, FileInput
+from bokeh.models import DatetimeTickFormatter, FileInput, Panel, Tabs
 from bokeh.layouts import column
 from bokeh.plotting import figure
 from bokeh.palettes import Colorblind8
@@ -100,6 +100,7 @@ def worldRecord(file):
 
     return WR
 
+
 def speedToAvgTime(speed):
     # function that converts speed to average 2k time:
     # speed: each sample represents real time speed (m/s)
@@ -120,8 +121,8 @@ def speedToAvgTime(speed):
     return avg2kTime
 
 def timeToAvgTime(time,distance):
-    # function that converts speed to average 2k time:
-    # speed: each sample represents real time speed (m/s)
+    # function that converts time to average 2k time:
+    # time: each sample represents total time (min:sec.ms)
     # to
     # avg2kTime: each sample represents average speed so far (2k time)
     avg2kTime = []
@@ -135,6 +136,26 @@ def timeToAvgTime(time,distance):
             print('Error at sample ' + str(i+1))
     return avg2kTime
 
+def timeToSpeed(time):
+    speed = []
+    try:
+        tInt = datetime.datetime.strptime(time[0],"%M:%S.%f")
+        speed.append(5/datetime.timedelta(minutes=tInt.minute,seconds=tInt.second,milliseconds=tInt.microsecond/1000).total_seconds())
+    except:
+        speed.append(float('nan'))
+        print('Error at first sample')
+    for i in range(len(time)-1):
+        try:
+            tInt1 = datetime.datetime.strptime(time[i],"%M:%S.%f")
+            tInt2 = datetime.datetime.strptime(time[i+1],"%M:%S.%f")
+            seconds = datetime.timedelta(minutes=tInt2.minute,seconds=tInt2.second,milliseconds=tInt2.microsecond/1000).total_seconds() - datetime.timedelta(minutes=tInt1.minute,seconds=tInt1.second,milliseconds=tInt1.microsecond/1000).total_seconds()
+            speed.append(5/seconds)
+        except:
+            speed.append(float('nan'))
+            print('Error at sample ' + str(i+1))
+    return speed
+
+
 def update_figure(fileName):
     # decode fileName
     decoded = base64.b64decode(fileName)
@@ -142,7 +163,8 @@ def update_figure(fileName):
     # read excelfile
     data = pd.read_csv(file, delimiter=';')
     # reset figure
-    p = figure(plot_height=600, plot_width=1200, y_axis_type='datetime', background_fill_color='#fafafa')
+    p1 = figure(plot_height=600, plot_width=1200, y_axis_type='datetime', background_fill_color='#fafafa')
+    p2 = figure(plot_height=600, plot_width=1200, background_fill_color='#fafafa')
     nanstring = ''
     for column_name in data.columns:
         for i in range(7):
@@ -152,8 +174,8 @@ def update_figure(fileName):
                 elif 'Time' in column_name:
                     time2k = data[column_name].iloc[-1]
                     time = data[column_name]
-                    t = datetime.datetime.strptime(time[0],"%M:%S.%f")
                     avg2kTime2 = timeToAvgTime(time,data.Distance.values)
+                    speed2 = timeToSpeed(time)
                 elif 'Speed' in column_name:
                     speed = data[column_name]
                     if pd.isna(speed).any():
@@ -162,22 +184,29 @@ def update_figure(fileName):
                     avg2kTime = speedToAvgTime(speed)
                     try:
                         # draw circles
-                        p.circle(x=data.Distance.values, y=avg2kTime2, legend_label=(str(time2k)[0:7] + ' ' + country), color=Colorblind8[i])
+                        p1.circle(x=data.Distance.values, y=avg2kTime2, legend_label=(str(time2k)[0:7] + ' ' + country), color=Colorblind8[i])
+                        p2.line(x=data.Distance.values, y=speed, legend_label=(str(time2k)[0:7] + ' ' + country), color=Colorblind8[i], line_width=2)
                     except:
                         print('Draw figure failed')
 
     # add world best time
     WR = worldRecord(file_input.filename)
     if WR is not None:
-        p.y_range.end = (WR + datetime.timedelta(minutes=1))
-        p.line(x=[0,2000], y=[WR,WR], line_color='black', line_alpha=0.7, line_dash='dashed', line_width=2, legend_label= str(WR)[2:9] + ' WR')
+        p1.y_range.end = (WR + datetime.timedelta(minutes=1))
+        p1.line(x=[0,2000], y=[WR,WR], line_color='black', line_alpha=0.7, line_dash='dashed', line_width=2, legend_label= str(WR)[2:9] + ' WR')
     else:
         print('No WR found')
 
-    fig = figure_layout(p, nanstring)
-    return fig
+    p1 = figure_layout1(p1, nanstring)
+    tab1 = Panel(child=p1, title="2k tijd")
 
-def figure_layout(p, nanstring):
+    p2 = figure_layout2(p2, nanstring)
+    tab2 = Panel(child=p2, title="snelheid")
+
+    tabs = Tabs(tabs=[tab1, tab2])
+    return tabs
+
+def figure_layout1(p, nanstring):
     p.title.text = file_input.filename + nanstring
     p.legend.click_policy = 'hide'
     p.xaxis.axis_label = 'Afstand (m)'
@@ -185,13 +214,22 @@ def figure_layout(p, nanstring):
     p.yaxis.formatter = DatetimeTickFormatter(seconds=['%M:%S'], minutes=['%M:%S'])
     return p
 
+def figure_layout2(p, nanstring):
+    p.title.text = file_input.filename + nanstring
+    p.legend.click_policy = 'hide'
+    p.xaxis.axis_label = 'Afstand (m)'
+    p.yaxis.axis_label = 'Snelheid (m/s)'
+    return p
+
 def update(attr, old, new):
     layout.children[1] = update_figure(new)
 
+figure_empty = figure(plot_height=600, plot_width=1200)
+
 # file button
-file_input = FileInput(accept='.csv', multiple=False, margin=[5,5,5,65])
+file_input = FileInput(accept='.csv', multiple=False, margin=[5,5,5,5])
 file_input.on_change('value', update)
 
-layout = column(file_input, figure(plot_height=600, plot_width=1200))
+layout = column(file_input, figure_empty)
 curdoc().add_root(layout)
 curdoc().title = "GPS FISA"
